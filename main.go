@@ -78,19 +78,23 @@ func (d *Data) list() {
 
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
+
 		if err != nil {
 			panic(err.Error())
 		}
 
 		var value string
+
 		for i, col := range values {
 			if col == nil {
 				value = "NULL"
 			} else {
 				value = string(col)
 			}
+
 			fmt.Println(columns[i], ": ", value)
 		}
+
 		fmt.Println("-----------------------------------")
 	}
 }
