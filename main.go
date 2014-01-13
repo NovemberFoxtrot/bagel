@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -51,7 +52,10 @@ func (d *Data) ping() {
 }
 
 func (d *Data) add(value string) {
-	result, err := d.db.Exec(`INSERT INTO tags(data) VALUES(?);`, value)
+	t := time.Now()
+	t.Format("2006-01-02 15:04:05")
+
+	result, err := d.db.Exec(`INSERT INTO tags(data, created_at) VALUES(?,?);`, value, t)
 
 	if err != nil {
 		log.Fatal(result, err)
