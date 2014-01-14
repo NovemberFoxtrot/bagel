@@ -51,19 +51,54 @@ func (d *Data) ping() {
 	log.Println("running...")
 }
 
-func (d *Data) add(value string) {
+func (d *Data) insert(query string, values string) int64 {	
 	t := time.Now()
 	t.Format("2006-01-02 15:04:05")
 
-	result, err := d.db.Exec(`INSERT INTO tags(data, created_at) VALUES(?,?);`, value, t)
+	result, err := d.db.Exec(query, values, t)
 
 	if err != nil {
-		log.Fatal(result, err)
+		log.Fatal("insert", result, err)
 	}
+
+	result_id, err := result.LastInsertId()
+
+	if err != nil {
+		log.Fatal("insert result", err)
+	}
+
+	return result_id
 }
 
-func (d *Data) list() {
-	rows, err := d.db.Query(`SELECT * FROM tags;`)
+func (d *Data) addCard(value string) int64 {
+	return d.insert(`INSERT INTO cards(data, created_at) VALUES(?,?);`, value)
+}
+
+func (d *Data) addTag(value string) int64 {
+	return d.insert(`INSERT INTO tags(data, created_at) VALUES(?,?);`, value)
+}
+
+func (d *Data) addCardTag(card_id, tag_id int64) int64 {
+	t := time.Now()
+	t.Format("2006-01-02 15:04:05")
+
+	result, err := d.db.Exec(`INSERT INTO cards_tags(card_id, tag_id, created_at) VALUES(?,?,?);`, card_id, tag_id, t)
+
+	if err != nil {
+		log.Fatal("addCardTag", result, err)
+	}
+
+	result_id, err := result.LastInsertId()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return result_id
+}
+
+func (d *Data) allRows(query string) {
+	rows, err := d.db.Query(query)
 	defer rows.Close()
 
 	columns, err := rows.Columns()
@@ -103,6 +138,18 @@ func (d *Data) list() {
 	}
 }
 
+func (d *Data) listCards() {
+	d.allRows(`SELECT * FROM cards;`)
+}
+
+func (d *Data) listTags() {
+	d.allRows(`SELECT * FROM tags;`)
+}
+
+func (d *Data) listCardTags() {
+	d.allRows(`SELECT * FROM cards_tags;`)
+}
+
 func (c *Config) init() {
 	configRaw, err := ioutil.ReadFile("config.json")
 
@@ -135,8 +182,12 @@ func main() {
 	values := os.Args[1:]
 
 	for _, value := range values {
-		d.add(value)
+		card_id := d.addCard(value)
+		tag_id := d.addTag(value)
+		d.addCardTag(card_id, tag_id)
 	}
 
-	d.list()
+	d.listCards()
+	d.listTags()
+	d.listCardTags()
 }
