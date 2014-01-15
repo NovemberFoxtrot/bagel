@@ -51,7 +51,7 @@ func (d *Data) ping() {
 	log.Println("running...")
 }
 
-func (d *Data) insert(query string, values string) int64 {	
+func (d *Data) insert(query string, values string) int64 {
 	t := time.Now()
 	t.Format("2006-01-02 15:04:05")
 
