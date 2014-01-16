@@ -52,11 +52,12 @@ CREATE TABLE stats (
 DROP TABLE IF EXISTS cards_tags;
 
 CREATE TABLE cards_tags (
-  card_id INT NOT NULL, 
-  tag_id INT NOT NULL, 
+  card_id     BIGINT UNSIGNED NOT NULL, 
+  tag_id      BIGINT UNSIGNED NOT NULL, 
   updated_at  DATETIME NOT NULL,
   created_at  DATETIME NOT NULL,
-  PRIMARY KEY (card_id, tag_id)
-# FOREIGN KEY (card_id) REFERENCES cards(id) ON UPDATE CASCADE, 
-# FOREIGN KEY (tag_id)  REFERENCES tag(id)   ON UPDATE CASCADE
+  PRIMARY KEY (card_id, tag_id),
+  KEY         fk_course_id (card_id),
+  CONSTRAINT  fk_card_id FOREIGN KEY (card_id) REFERENCES cards(id),
+  CONSTRAINT  fk_tag_id  FOREIGN KEY (tag_id)  REFERENCES tags(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
