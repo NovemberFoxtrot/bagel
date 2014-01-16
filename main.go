@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -121,10 +122,9 @@ func (d *Data) allRows(query string) {
 				value = string(col)
 			}
 
-			fmt.Println(columns[i], ": ", value)
+			fmt.Print(columns[i], " : ", value, " | ")
 		}
-
-		fmt.Println("-----------------------------------")
+		fmt.Println("")
 	}
 }
 
@@ -151,6 +151,8 @@ func (c *Config) init() {
 }
 
 func main() {
+	flag.Parse()
+
 	var config Config
 
 	config.init()
