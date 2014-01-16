@@ -18,6 +18,12 @@ type Config struct {
 	Username string `json:"username"`
 }
 
+func check(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 type Data struct {
 	db     *sql.DB
 	config Config
@@ -32,9 +38,7 @@ func (d *Data) start() {
 
 	d.db = db
 
-	if err != nil {
-		panic(err.Error())
-	}
+	check(err)
 }
 
 func (d *Data) stop() {
@@ -44,9 +48,7 @@ func (d *Data) stop() {
 func (d *Data) ping() {
 	err := d.db.Ping()
 
-	if err != nil {
-		panic(err.Error())
-	}
+	check(err)
 
 	log.Println("running...")
 }
@@ -57,15 +59,11 @@ func (d *Data) insert(query string, values string) int64 {
 
 	result, err := d.db.Exec(query, values, t)
 
-	if err != nil {
-		log.Fatal("insert", result, err)
-	}
+	check(err)
 
 	result_id, err := result.LastInsertId()
 
-	if err != nil {
-		log.Fatal("insert result", err)
-	}
+	check(err)
 
 	return result_id
 }
@@ -84,15 +82,11 @@ func (d *Data) addCardTag(card_id, tag_id int64) int64 {
 
 	result, err := d.db.Exec(`INSERT INTO cards_tags(card_id, tag_id, created_at) VALUES(?,?,?);`, card_id, tag_id, t)
 
-	if err != nil {
-		log.Fatal("addCardTag", result, err)
-	}
+	check(err)
 
 	result_id, err := result.LastInsertId()
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	check(err)
 
 	return result_id
 }
@@ -103,9 +97,7 @@ func (d *Data) allRows(query string) {
 
 	columns, err := rows.Columns()
 
-	if err != nil {
-		panic(err.Error())
-	}
+	check(err)
 
 	values := make([]sql.RawBytes, len(columns))
 
@@ -118,9 +110,7 @@ func (d *Data) allRows(query string) {
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 
-		if err != nil {
-			panic(err.Error())
-		}
+		check(err)
 
 		var value string
 
@@ -153,15 +143,11 @@ func (d *Data) listCardTags() {
 func (c *Config) init() {
 	configRaw, err := ioutil.ReadFile("config.json")
 
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 
 	err = json.Unmarshal(configRaw, &c)
 
-	if err != nil {
-		panic(err)
-	}
+	check(err)
 }
 
 func main() {
