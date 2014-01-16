@@ -54,11 +54,13 @@ func (d *Data) ping() {
 	log.Println("running...")
 }
 
-func (d *Data) insert(query string, values string) int64 {
+func (d *Data) insert(query string, values... interface{}) int64 {
 	t := time.Now()
 	t.Format("2006-01-02 15:04:05")
 
-	result, err := d.db.Exec(query, values, t)
+	values = append(values, t)
+
+	result, err := d.db.Exec(query, values...)
 
 	check(err)
 
@@ -69,8 +71,8 @@ func (d *Data) insert(query string, values string) int64 {
 	return result_id
 }
 
-func (d *Data) addCard(value string) int64 {
-	return d.insert(`INSERT INTO cards(data, created_at) VALUES(?,?);`, value)
+func (d *Data) addCard(answer, question, explanation string) int64 {
+	return d.insert(`INSERT INTO cards(question, answer, explanation, created_at) VALUES(?,?,?,?);`, answer, question, explanation)
 }
 
 func (d *Data) addTag(value string) int64 {
@@ -170,9 +172,9 @@ func main() {
 
 	values := os.Args[1:]
 
-	for _, value := range values {
-		card_id := d.addCard(value)
-		tag_id := d.addTag(value)
+	if len(values) > 0 {
+		card_id := d.addCard(values[0], values[1], values[2])
+		tag_id := d.addTag(values[3])
 		d.addCardTag(card_id, tag_id)
 	}
 
