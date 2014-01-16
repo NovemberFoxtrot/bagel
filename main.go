@@ -80,18 +80,7 @@ func (d *Data) addTag(value string) int64 {
 }
 
 func (d *Data) addCardTag(card_id, tag_id int64) int64 {
-	t := time.Now()
-	t.Format("2006-01-02 15:04:05")
-
-	result, err := d.db.Exec(`INSERT INTO cards_tags(card_id, tag_id, created_at) VALUES(?,?,?);`, card_id, tag_id, t)
-
-	check(err)
-
-	result_id, err := result.LastInsertId()
-
-	check(err)
-
-	return result_id
+	return d.insert(`INSERT INTO cards_tags(card_id, tag_id, created_at) VALUES(?,?,?);`, card_id, tag_id)
 }
 
 func (d *Data) allRows(query string) {
