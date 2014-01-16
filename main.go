@@ -94,6 +94,7 @@ func (d *Data) addCardTag(card_id, tag_id int64) int64 {
 
 func (d *Data) allRows(query string) {
 	rows, err := d.db.Query(query)
+
 	defer rows.Close()
 
 	columns, err := rows.Columns()
