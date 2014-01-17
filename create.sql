@@ -7,10 +7,9 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE cards ( 
   id          SERIAL PRIMARY KEY, 
 
-  data        VARCHAR(200) NOT NULL UNIQUE,
-  # question    VARCHAR(200) NOT NULL UNIQUE,
-  # answer      VARCHAR(200) NOT NULL UNIQUE,
-  # explanation VARCHAR(200) NOT NULL UNIQUE,
+  question    VARCHAR(200) NOT NULL UNIQUE,
+  answer      VARCHAR(200) NOT NULL UNIQUE,
+  explanation VARCHAR(200) NOT NULL UNIQUE,
 
   updated_at  DATETIME NOT NULL,
   created_at  DATETIME NOT NULL
