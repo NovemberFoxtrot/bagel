@@ -125,6 +125,7 @@ func (d *Data) allRows(query string) {
 
 			fmt.Print(columns[i], " : ", value, " | ")
 		}
+
 		fmt.Println("")
 	}
 }
