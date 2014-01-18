@@ -130,7 +130,20 @@ func (d *Data) listTags() {
 }
 
 func (d *Data) listCardTags() {
-	d.allRows(`SELECT * FROM cards_tags;`)
+	// d.allRows(`SELECT * FROM cards_tags;`)
+	d.allRows(`SELECT 
+	c.id,
+	c.question,
+	c.answer,
+	c.explanation,
+	c.created_at,
+	t.data,
+	t.created_at
+	FROM cards c 
+	JOIN cards_tags ct 
+	ON c.id = ct.card_id 
+	JOIN tags t 
+	ON t.id = ct.tag_id`)
 }
 
 func (c *Config) init() {
