@@ -130,7 +130,6 @@ func (d *Data) listTags() {
 }
 
 func (d *Data) listCardTags() {
-	// d.allRows(`SELECT * FROM cards_tags;`)
 	d.allRows(`SELECT 
 	c.id,
 	c.question,
@@ -139,10 +138,10 @@ func (d *Data) listCardTags() {
 	c.created_at,
 	t.data,
 	t.created_at
-	FROM cards c 
-	JOIN cards_tags ct 
+	FROM cards AS c 
+	JOIN cards_tags AS ct 
 	ON c.id = ct.card_id 
-	JOIN tags t 
+	JOIN tags AS t 
 	ON t.id = ct.tag_id`)
 }
 
