@@ -2,9 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -54,7 +56,7 @@ func (d *Data) ping() {
 	log.Println("running...")
 }
 
-func (d *Data) insert(query string, values... interface{}) int64 {
+func (d *Data) insert(query string, values ...interface{}) int64 {
 	t := time.Now()
 	t.Format("2006-01-02 15:04:05")
 
@@ -155,8 +157,35 @@ func (c *Config) init() {
 	check(err)
 }
 
+func parseCSV(theFile string) {
+	csvFile, err := os.Open(theFile)
+	defer csvFile.Close()
+	if err != nil {
+		panic(err)
+	}
+	csvReader := csv.NewReader(csvFile)
+	for {
+		fields, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(fields)
+	}
+}
+
 func main() {
+	var theFile string
+
+	flag.StringVar(&theFile, "f", "file", "")
+
 	flag.Parse()
+
+	parseCSV(theFile)
+
+	os.Exit(0)
 
 	var config Config
 
