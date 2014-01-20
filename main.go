@@ -177,6 +177,7 @@ func main() {
 	if len(values) > 0 {
 		card_id := d.addCard(values[0], values[1], values[2])
 		tag_id := d.addTag(values[3])
+
 		d.addCardTag(card_id, tag_id)
 	}
 
