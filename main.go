@@ -157,22 +157,41 @@ func (c *Config) init() {
 	check(err)
 }
 
-func parseCSV(theFile string) {
+func (d *Data) parseCSV(theFile string) {
 	csvFile, err := os.Open(theFile)
 	defer csvFile.Close()
 	if err != nil {
 		panic(err)
 	}
+
 	csvReader := csv.NewReader(csvFile)
+
 	for {
 		fields, err := csvReader.Read()
+
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			panic(err)
 		}
 
-		fmt.Println(fields)
+		data := fields[0]
+		// cost1 := fields[1]
+		// cost2 := fields[2]
+		// cost3 := fields[3]
+		speech := fields[4]
+		// something := fields[5]
+		// form := fields[6]
+		// dictionary := fields[7]
+		hiragana := fields[8]
+		notes := fields[9]
+
+		// fmt.Println(data, cost1, cost2, cost3, speech, something, form, dictionary, hiragana, notes)
+
+		card_id := d.addCard(data, hiragana, notes)
+		tag_id := d.addTag(speech)
+
+		d.addCardTag(card_id, tag_id)
 	}
 }
 
@@ -182,10 +201,6 @@ func main() {
 	flag.StringVar(&theFile, "f", "file", "")
 
 	flag.Parse()
-
-	parseCSV(theFile)
-
-	os.Exit(0)
 
 	var config Config
 
@@ -201,16 +216,9 @@ func main() {
 
 	d.ping()
 
-	values := os.Args[1:]
+	d.parseCSV(theFile)
 
-	if len(values) > 0 {
-		card_id := d.addCard(values[0], values[1], values[2])
-		tag_id := d.addTag(values[3])
-
-		d.addCardTag(card_id, tag_id)
-	}
-
-	d.listCards()
-	d.listTags()
+	//d.listCards()
+	//d.listTags()
 	d.listCardTags()
 }
