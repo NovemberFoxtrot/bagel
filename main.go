@@ -176,17 +176,11 @@ func (d *Data) parseCSV(theFile string) {
 		}
 
 		data := fields[0]
-		// cost1 := fields[1]
-		// cost2 := fields[2]
-		// cost3 := fields[3]
 		speech := fields[4]
-		// something := fields[5]
 		// form := fields[6]
 		// dictionary := fields[7]
 		hiragana := fields[8]
 		notes := fields[9]
-
-		// fmt.Println(data, cost1, cost2, cost3, speech, something, form, dictionary, hiragana, notes)
 
 		card_id := d.addCard(data, hiragana, notes)
 		tag_id := d.addTag(speech)
@@ -218,7 +212,7 @@ func main() {
 
 	d.parseCSV(theFile)
 
-	//d.listCards()
-	//d.listTags()
+	d.listCards()
+	d.listTags()
 	d.listCardTags()
 }
