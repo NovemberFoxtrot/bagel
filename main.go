@@ -148,7 +148,7 @@ func (d *Data) addCardTag(card_id, tag_id int64) int64 {
 	return d.insert(`INSERT INTO cards_tags(card_id, tag_id, created_at) VALUES(?,?,?);`, card_id, tag_id)
 }
 
-func (d *Data) allRows(query string) {
+func (d *Data) allRows(query string) int {
 	rows, err := d.db.Query(query)
 
 	defer rows.Close()
@@ -157,7 +157,7 @@ func (d *Data) allRows(query string) {
 
 	check(err)
 
-	fmt.Println(len(rows))
+	count := 0
 
 	values := make([]sql.RawBytes, len(columns))
 
@@ -168,6 +168,7 @@ func (d *Data) allRows(query string) {
 	}
 
 	for rows.Next() {
+		count += 1
 		err = rows.Scan(scanArgs...)
 
 		check(err)
@@ -186,6 +187,8 @@ func (d *Data) allRows(query string) {
 
 		fmt.Println("")
 	}
+
+	return count
 }
 
 func (d *Data) listCards() {
