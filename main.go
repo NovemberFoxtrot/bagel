@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"index/suffixarray"
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"time"
 	"unicode"
 
@@ -294,6 +296,8 @@ func main() {
 
 	data := FetchURL(os.Args[1])
 
+	index := suffixarray.New([]byte(data))
+
 	var buffer []rune
 
 	printed := false
@@ -327,5 +331,17 @@ func main() {
 	for k, v := range counter {
 		fmt.Println(v, k)
 		d.findCards(k)
+	}
+
+	r, err := regexp.Compile(".*")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(index.FindAllIndex(r, 10))
+
+	for _, l := range index.Lookup([]byte(`世界`), 10) {
+		fmt.Println(string(index.Bytes()[l:l+1]))
 	}
 }
