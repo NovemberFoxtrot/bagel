@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"encoding/json"
+	"encoding/xml"
 	"flag"
 	"fmt"
 	"index/suffixarray"
@@ -15,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 	"unicode"
 
@@ -291,7 +293,59 @@ func populate() {
 	d.listCardTags()
 }
 
+const ex = `<entry>
+<ent_seq>1000510</ent_seq>
+<r_ele>
+<reb>あやふや</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&adj-na;</pos>
+<pos>&n;</pos>
+<misc>&on-mim;</misc>
+<gloss>uncertain</gloss>
+<gloss>vague</gloss>
+<gloss>ambiguous</gloss>
+</sense>
+</entry>`
+
+type sense struct {
+	gloss string `xml:"gloss"`
+}
+
+type Entry struct {
+	EntSeq     string   `xml:"ent_seq"`
+	SenseGloss string   `xml:"sense>gloss"`
+	SensePos   string   `xml:"sense>pos"`
+	Reb        []string `xml:"r_ele>reb"`
+	Keb        []string `xml:"k_ele>keb"`
+	Xref       []string `xml:"xref"`
+	AuditUpdate string `xml:"audit>upd_date"`
+}
+
+type JMdict struct {
+	EntryList []Entry `xml:"entry"`
+}
+
 func main() {
+	xmlFile, err := ioutil.ReadFile("JMdict_e")
+
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+
+	xmlFile = []byte(strings.Replace(string(xmlFile), `&`, ``, -1))
+	xmlFile = []byte(strings.Replace(string(xmlFile), `;`, ``, -1))
+
+	var q JMdict
+
+	xml.Unmarshal(xmlFile, &q)
+
+	fmt.Println(q)
+
+	return
+
 	counter := make(map[string]int, 0)
 
 	data := FetchURL(os.Args[1])
@@ -330,7 +384,7 @@ func main() {
 
 	for k, v := range counter {
 		fmt.Println(v, k)
-		d.findCards(k)
+		// d.findCards(k)
 	}
 
 	r, err := regexp.Compile(".*")
@@ -342,6 +396,6 @@ func main() {
 	fmt.Println(index.FindAllIndex(r, 10))
 
 	for _, l := range index.Lookup([]byte(`世界`), 10) {
-		fmt.Println(string(index.Bytes()[l:l+1]))
+		fmt.Println(string(index.Bytes()[l : l+1]))
 	}
 }
