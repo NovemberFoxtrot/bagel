@@ -2,85 +2,15 @@ package main
 
 import (
 	"database/sql"
-	"encoding/csv"
 	"encoding/json"
-	"encoding/xml"
-	"flag"
 	"fmt"
-	"index/suffixarray"
-	"io"
 	"io/ioutil"
 	"log"
-	"net"
-	"net/http"
-	"net/url"
 	"os"
-	"regexp"
-	"strings"
 	"time"
-	"unicode"
 
 	_ "github.com/go-sql-driver/mysql"
 )
-
-type TimeoutConfig struct {
-	ConnectTimeout   time.Duration
-	ReadWriteTimeout time.Duration
-}
-
-func TimeoutDialer(cTimeout time.Duration, rwTimeout time.Duration) func(net, addr string) (c net.Conn, err error) {
-	return func(netw, addr string) (net.Conn, error) {
-		conn, err := net.DialTimeout(netw, addr, cTimeout)
-
-		if err != nil {
-			return nil, err
-		}
-
-		conn.SetDeadline(time.Now().Add(rwTimeout))
-
-		return conn, nil
-	}
-}
-
-func FetchURL(theurl string) string {
-	var client *http.Client
-
-	if proxy := os.Getenv("http_proxy"); proxy != `` {
-		proxyUrl, err := url.Parse(proxy)
-
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		transport := http.Transport{
-			Dial:  TimeoutDialer(5*time.Second, 5*time.Second),
-			Proxy: http.ProxyURL(proxyUrl),
-		}
-
-		client = &http.Client{Transport: &transport}
-	} else {
-		client = &http.Client{}
-	}
-
-	req, err := http.NewRequest(`GET`, theurl, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return string(body)
-}
 
 type Config struct {
 	Database string `json:"database"`
@@ -140,19 +70,13 @@ func (d *Data) insert(query string, values ...interface{}) int64 {
 	return result_id
 }
 
-func (d *Data) addCard(answer, question, explanation string) int64 {
-	return d.insert(`INSERT INTO cards(question, answer, explanation, created_at) VALUES(?,?,?,?);`, answer, question, explanation)
+func (d *Data) add(question, answer string) int64 {
+	return d.insert(`INSERT INTO cards(question, answer, created_at) VALUES(?,?,?);`, question, answer)
 }
 
-func (d *Data) addTag(value string) int64 {
-	return d.insert(`INSERT INTO tags(data, created_at) VALUES(?,?);`, value)
-}
+func (d *Data) allRows(query string) []string {
+	var results []string
 
-func (d *Data) addCardTag(card_id, tag_id int64) int64 {
-	return d.insert(`INSERT INTO cards_tags(card_id, tag_id, created_at) VALUES(?,?,?);`, card_id, tag_id)
-}
-
-func (d *Data) allRows(query string) int {
 	rows, err := d.db.Query(query)
 
 	defer rows.Close()
@@ -187,40 +111,21 @@ func (d *Data) allRows(query string) int {
 			}
 
 			fmt.Print(columns[i], " : ", value, " | ")
+			results = append(results, value)
 		}
 
 		fmt.Println("")
 	}
 
-	return count
+	return results
 }
 
-func (d *Data) listCards() {
-	d.allRows(`SELECT * FROM cards;`)
+func (d *Data) list() []string {
+	return d.allRows(`SELECT id, question, answer, SUM(correct / (incorrect + 1)) AS card_status  FROM cards ORDER BY card_status, question, answer;`)
 }
 
 func (d *Data) findCards(text string) {
 	d.allRows(`SELECT * FROM cards WHERE question LIKE BINARY '` + text + `%' limit 10;`)
-}
-
-func (d *Data) listTags() {
-	d.allRows(`SELECT * FROM tags;`)
-}
-
-func (d *Data) listCardTags() {
-	d.allRows(`SELECT 
-	c.id,
-	c.question,
-	c.answer,
-	c.explanation,
-	c.created_at,
-	t.data,
-	t.created_at
-	FROM cards AS c 
-	JOIN cards_tags AS ct 
-	ON c.id = ct.card_id 
-	JOIN tags AS t 
-	ON t.id = ct.tag_id`)
 }
 
 func (c *Config) init() {
@@ -233,169 +138,66 @@ func (c *Config) init() {
 	check(err)
 }
 
-func (d *Data) parseCSV(theFile string) {
-	csvFile, err := os.Open(theFile)
-	defer csvFile.Close()
-	if err != nil {
-		panic(err)
-	}
+func (d *Data) correct(id string) {
+	fmt.Println("correct")
+}
 
-	csvReader := csv.NewReader(csvFile)
+func (d *Data) incorrect(id string) {
+	fmt.Println("incorrect")
+}
 
-	for {
-		fields, err := csvReader.Read()
+func (d *Data) learn() {
+	current := d.list()
 
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
-		}
+	id := current[0]
 
-		data := fields[0]
-		speech := fields[4]
-		// form := fields[6]
-		// dictionary := fields[7]
-		hiragana := fields[8]
-		notes := fields[9]
+	var response string
+	fmt.Println(id, current[1])
+	fmt.Scanf("%s", &response)
 
-		card_id := d.addCard(data, hiragana, notes)
-		tag_id := d.addTag(speech)
+	fmt.Println(current[2], "(y/N)?")
+	fmt.Scanf("%s", &response)
 
-		d.addCardTag(card_id, tag_id)
+	switch response {
+	case "", "n", "N":
+		d.incorrect(id)
+	default:
+		d.correct(id)
 	}
 }
 
-func populate() {
-	var theFile string
-
-	flag.StringVar(&theFile, "f", "file", "")
-
-	flag.Parse()
-
-	var config Config
-
-	config.init()
-
-	var d Data
-
-	d.init(config)
-
-	d.start()
-
-	defer d.stop()
-
-	d.ping()
-
-	d.parseCSV(theFile)
-
-	d.listCards()
-	d.listTags()
-	d.listCardTags()
-}
-
-const ex = `<entry>
-<ent_seq>1000510</ent_seq>
-<r_ele>
-<reb>あやふや</reb>
-<re_pri>ichi1</re_pri>
-</r_ele>
-<sense>
-<pos>&adj-na;</pos>
-<pos>&n;</pos>
-<misc>&on-mim;</misc>
-<gloss>uncertain</gloss>
-<gloss>vague</gloss>
-<gloss>ambiguous</gloss>
-</sense>
-</entry>`
-
-type sense struct {
-	gloss string `xml:"gloss"`
-}
-
-type Entry struct {
-	EntSeq     string   `xml:"ent_seq"`
-	SenseGloss string   `xml:"sense>gloss"`
-	SensePos   string   `xml:"sense>pos"`
-	Reb        []string `xml:"r_ele>reb"`
-	Keb        []string `xml:"k_ele>keb"`
-	Xref       []string `xml:"xref"`
-	AuditUpdate string `xml:"audit>upd_date"`
-}
-
-type JMdict struct {
-	EntryList []Entry `xml:"entry"`
+func usage() {
+	fmt.Printf("usage: %s <command> <options>\n", os.Args[0])
+	os.Exit(1)
 }
 
 func main() {
-	xmlFile, err := ioutil.ReadFile("JMdict_e")
-
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
-	}
-
-	xmlFile = []byte(strings.Replace(string(xmlFile), `&`, ``, -1))
-	xmlFile = []byte(strings.Replace(string(xmlFile), `;`, ``, -1))
-
-	var q JMdict
-
-	xml.Unmarshal(xmlFile, &q)
-
-	fmt.Println(q)
-
-	return
-
-	counter := make(map[string]int, 0)
-
-	data := FetchURL(os.Args[1])
-
-	index := suffixarray.New([]byte(data))
-
-	var buffer []rune
-
-	printed := false
-
-	for _, r := range data {
-		if unicode.Is(unicode.Han, r) || unicode.Is(unicode.Hiragana, r) || unicode.Is(unicode.Katakana, r) || r == 'ー' {
-			buffer = append(buffer, r)
-
-			printed = false
-		} else if printed != true {
-			printed = true
-			counter[string(buffer)] += 1
-			buffer = make([]rune, 0)
-		}
+	if len(os.Args) < 2 {
+		fmt.Printf("usage: %s <command> <optionz>\n", os.Args[0])
+		os.Exit(1)
 	}
 
 	var config Config
-
 	config.init()
 
 	var d Data
-
 	d.init(config)
-
 	d.start()
-
 	defer d.stop()
-
 	d.ping()
 
-	for k, v := range counter {
-		fmt.Println(v, k)
-		// d.findCards(k)
-	}
-
-	r, err := regexp.Compile(".*")
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println(index.FindAllIndex(r, 10))
-
-	for _, l := range index.Lookup([]byte(`世界`), 10) {
-		fmt.Println(string(index.Bytes()[l : l+1]))
+	switch os.Args[1] {
+	case "add":
+		if len(os.Args) != 4 {
+			usage()
+		}
+		d.add(os.Args[2], os.Args[3])
+		d.add(os.Args[3], os.Args[2])
+	case "list":
+		d.list()
+	case "learn":
+		d.learn()
+	default:
+		usage()
 	}
 }
