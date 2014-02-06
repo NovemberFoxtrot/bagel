@@ -120,8 +120,8 @@ func (d *Data) allRows(query string) []string {
 	return results
 }
 
-func (d *Data) list() []string {
-	return d.allRows(`SELECT id, question, answer, SUM(correct / (incorrect + 1)) AS card_status  FROM cards ORDER BY card_status, question, answer;`)
+func (d *Data) next() []string {
+	return d.allRows(`SELECT id, question, answer, (correct / (incorrect + 1)) AS card_status  FROM cards ORDER BY card_status, RAND() LIMIT 1;`)
 }
 
 func (d *Data) findCards(text string) {
@@ -139,15 +139,19 @@ func (c *Config) init() {
 }
 
 func (d *Data) correct(id string) {
-	fmt.Println("correct")
+	_, err := d.db.Exec("UPDATE cards SET `correct` = `correct` + 1 WHERE id = ?", id)
+	check(err)
 }
 
 func (d *Data) incorrect(id string) {
-	fmt.Println("incorrect")
+	_, err := d.db.Exec("UPDATE cards SET `incorrect` = `incorrect` + 1 WHERE id = ?", id)
+	check(err)
 }
 
 func (d *Data) learn() {
-	current := d.list()
+for {
+
+	current := d.next()
 
 	id := current[0]
 
@@ -164,6 +168,7 @@ func (d *Data) learn() {
 	default:
 		d.correct(id)
 	}
+}
 }
 
 func usage() {
@@ -193,8 +198,6 @@ func main() {
 		}
 		d.add(os.Args[2], os.Args[3])
 		d.add(os.Args[3], os.Args[2])
-	case "list":
-		d.list()
 	case "learn":
 		d.learn()
 	default:
