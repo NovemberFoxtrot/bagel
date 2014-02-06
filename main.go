@@ -70,8 +70,8 @@ func (d *Data) insert(query string, values ...interface{}) int64 {
 	return result_id
 }
 
-func (d *Data) add(question, answer string) int64 {
-	return d.insert(`INSERT INTO cards(question, answer, created_at) VALUES(?,?,?);`, question, answer)
+func (d *Data) add(stack, question, answer string) int64 {
+	return d.insert(`INSERT INTO cards(stack, question, answer, created_at) VALUES(?,?,?,?);`, stack, question, answer)
 }
 
 func (d *Data) allRows(query string) []string {
@@ -120,14 +120,6 @@ func (d *Data) allRows(query string) []string {
 	return results
 }
 
-func (d *Data) next() []string {
-	return d.allRows(`SELECT id, question, answer, (correct / (incorrect + 1)) AS card_status  FROM cards ORDER BY card_status, RAND() LIMIT 1;`)
-}
-
-func (d *Data) findCards(text string) {
-	d.allRows(`SELECT * FROM cards WHERE question LIKE BINARY '` + text + `%' limit 10;`)
-}
-
 func (c *Config) init() {
 	configRaw, err := ioutil.ReadFile("config.json")
 
@@ -136,6 +128,10 @@ func (c *Config) init() {
 	err = json.Unmarshal(configRaw, &c)
 
 	check(err)
+}
+
+func (d *Data) next(stack string) []string {
+	return d.allRows(`SELECT id, question, answer, ROUND(correct / (incorrect + 1)) AS card_status FROM cards WHERE stack = '` + stack + `' ORDER BY card_status, RAND() LIMIT 1;`)
 }
 
 func (d *Data) correct(id string) {
@@ -148,27 +144,26 @@ func (d *Data) incorrect(id string) {
 	check(err)
 }
 
-func (d *Data) learn() {
-for {
+func (d *Data) learn(stack string) {
+	for {
+		current := d.next(stack)
 
-	current := d.next()
+		id := current[0]
 
-	id := current[0]
+		var response string
+		fmt.Printf("%s %s", id, current[1])
+		fmt.Scanf("%s", &response)
 
-	var response string
-	fmt.Println(id, current[1])
-	fmt.Scanf("%s", &response)
+		fmt.Printf("%s %s %s", id, current[2], "(y/N)?")
+		fmt.Scanf("%s", &response)
 
-	fmt.Println(current[2], "(y/N)?")
-	fmt.Scanf("%s", &response)
-
-	switch response {
-	case "", "n", "N":
-		d.incorrect(id)
-	default:
-		d.correct(id)
+		switch response {
+		case "", "n", "N":
+			d.incorrect(id)
+		default:
+			d.correct(id)
+		}
 	}
-}
 }
 
 func usage() {
@@ -178,8 +173,7 @@ func usage() {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("usage: %s <command> <optionz>\n", os.Args[0])
-		os.Exit(1)
+		usage()
 	}
 
 	var config Config
@@ -193,13 +187,18 @@ func main() {
 
 	switch os.Args[1] {
 	case "add":
-		if len(os.Args) != 4 {
+		if len(os.Args) != 5 {
 			usage()
 		}
-		d.add(os.Args[2], os.Args[3])
-		d.add(os.Args[3], os.Args[2])
+
+		d.add(os.Args[2], os.Args[3], os.Args[4])
+		d.add(os.Args[2], os.Args[4], os.Args[3])
 	case "learn":
-		d.learn()
+		if len(os.Args) != 3 {
+			usage()
+		}
+
+		d.learn(os.Args[2])
 	default:
 		usage()
 	}

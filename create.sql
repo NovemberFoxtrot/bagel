@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS cards;
 CREATE TABLE cards ( 
   id          SERIAL PRIMARY KEY, 
 
+  stack       VARCHAR(2000) NOT NULL,
   question    VARCHAR(2000) NOT NULL,
   answer      VARCHAR(2000) NOT NULL,
 	correct     INT DEFAULT 0,
