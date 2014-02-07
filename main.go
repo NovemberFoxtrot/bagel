@@ -154,7 +154,7 @@ func (d *Data) learn(stack string) {
 		fmt.Printf("%s %s", id, current[1])
 		fmt.Scanf("%s", &response)
 
-		fmt.Printf("%s %s %s", id, current[2], "(y/N)?")
+		fmt.Printf("%s %s %s", id, current[2], "(y/N)? :")
 		fmt.Scanf("%s", &response)
 
 		switch response {
