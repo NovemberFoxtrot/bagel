@@ -20,7 +20,7 @@ type Config struct {
 
 func check(err error) {
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("error:", err)
 	}
 }
 
