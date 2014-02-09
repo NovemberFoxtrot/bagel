@@ -167,7 +167,7 @@ func (d *Data) learn(stack string) {
 }
 
 func usage() {
-	fmt.Printf("usage: %s <command> <options>\n", os.Args[0])
+	fmt.Printf("usage: %s <add/learn> <options>\n", os.Args[0])
 	os.Exit(1)
 }
 
