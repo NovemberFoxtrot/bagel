@@ -103,18 +103,15 @@ func (d *Data) allRows(query string) []string {
 
 		var value string
 
-		for i, col := range values {
+		for _, col := range values {
 			if col == nil {
 				value = "NULL"
 			} else {
 				value = string(col)
 			}
 
-			fmt.Print(columns[i], " : ", value, " | ")
 			results = append(results, value)
 		}
-
-		fmt.Println("")
 	}
 
 	return results
