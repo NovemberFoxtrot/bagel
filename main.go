@@ -190,7 +190,7 @@ func main() {
 
 		d.add(os.Args[2], os.Args[3], os.Args[4])
 		d.add(os.Args[2], os.Args[4], os.Args[3])
-	case "learn":
+	case "stack":
 		if len(os.Args) != 3 {
 			usage()
 		}
